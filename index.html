@@ -1,212 +1,133 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 RGB Lampe</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #6366f1;
-            --accent-hover: #4f46e5;
-            --success-color: #10b981;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            width: 100%;
-            max-width: 380px;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        #status {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 25px;
-        }
-
-        .btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            width: 100%;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn.connected {
-            background-color: var(--success-color);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Steuerungsbereich ist anfangs versteckt */
-        #controlPanel {
-            display: none;
-            margin-top: 30px;
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .color-picker-wrapper {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 15px auto;
-        }
-
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            cursor: pointer;
-            background: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-
-        input[type="color"]:hover {
-            transform: scale(1.05);
-        }
-
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-
-        input[type="color"]::-webkit-color-swatch {
-            border: 4px solid #ffffff;
-            border-radius: 50%;
-        }
-
-        .color-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 RGB Lampe Steuerung</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 50px 20px;
+    }
+    h1 {
+      color: #03dac6;
+      margin-bottom: 5px;
+    }
+    p {
+      color: #aaa;
+      margin-top: 0;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 15px;
+      display: inline-block;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+    }
+    .control-group {
+      margin: 20px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input[type=color] {
+      border: none;
+      width: 100px;
+      height: 50px;
+      border-radius: 8px;
+      cursor: pointer;
+      background: none;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #03dac6;
+    }
+    button.power-btn {
+      background: #cf6679;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    button.power-btn:hover {
+      background: #b5495b;
+    }
+    .status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Smart Lampe</h1>
-        <div id="status">Status: Nicht verbunden</div>
-        
-        <button id="connectBtn" class="btn">Mit Lampe verbinden</button>
-
-        <!-- Dieser Bereich erscheint erst nach erfolgreichem Verbinden -->
-        <div id="controlPanel">
-            <div class="color-picker-wrapper">
-                <input type="color" id="colorPicker" value="#6366f1">
-            </div>
-            <div class="color-label">Wähle deine Wunschfarbe</div>
-        </div>
+  <div class="card">
+    <h1>Smart Lamp</h1>
+    <p>ESP32 Webinterface</p>
+    
+    <div class="control-group">
+      <button class="power-btn" onclick="togglePower()">Ein / Aus (Toggle)</button>
     </div>
 
-    <script>
-        const serviceUuid = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-        const characteristicUuid = "beb5483e-36e1-4688-b7f5-ea07361b26a1";
+    <div class="control-group">
+      <label for="colorPicker">Farbe wählen:</label>
+      <input type="color" id="colorPicker" value="#ffffff" onchange="updateColor()">
+    </div>
 
-        let bluetoothDevice;
-        let bluetoothCharacteristic;
+    <div class="control-group">
+      <label for="brightness">Helligkeit:</label>
+      <input type="range" id="brightness" min="0" max="255" value="128" oninput="updateBrightness()">
+    </div>
 
-        const connectBtn = document.getElementById('connectBtn');
-        const statusDiv = document.getElementById('status');
-        const controlPanel = document.getElementById('controlPanel');
-        const colorPicker = document.getElementById('colorPicker');
+    <div class="status" id="statusText">Status: Verbunden</div>
+  </div>
 
-        connectBtn.addEventListener('click', async () => {
-            try {
-                statusDiv.innerText = "Suche nach ESP32...";
-                
-                bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'ESP32_RGB_Lampe' }],
-                    optionalServices: [serviceUuid]
-                });
+  <script>
+    // Trage hier die IP-Adresse deines ESP32 ein (z.B. "http://192.168.4.1")
+    // Wenn die Seite direkt vom ESP32 geladen wird, kann es auch leer bleiben ("").
+    const espIp = ""; 
 
-                statusDiv.innerText = "Verbinde...";
-                const server = await bluetoothDevice.gatt.connect();
-
-                const service = await server.getPrimaryService(serviceUuid);
-                bluetoothCharacteristic = await service.getCharacteristic(characteristicUuid);
-
-                // UI anpassen bei Erfolg
-                statusDiv.innerText = "Verbunden";
-                connectBtn.innerText = "Verbunden";
-                connectBtn.classList.add('connected');
-                connectBtn.disabled = true; // Button deaktivieren, da schon verbunden
-                
-                // Farbsteuerung einblenden
-                controlPanel.style.display = "block";
-
-            } catch (error) {
-                console.error(error);
-                statusDiv.innerText = "Verbindung fehlgeschlagen";
-            }
+    function sendCommand(url) {
+      fetch(espIp + url)
+        .then(response => {
+          document.getElementById('statusText').innerText = "Status: Befehl gesendet";
+        })
+        .catch(error => {
+          document.getElementById('statusText').innerText = "Status: Fehler bei Verbindung!";
+          console.error('Fehler:', error);
         });
+    }
 
-        async function sendColor(r, g, b) {
-            if (!bluetoothCharacteristic) return;
+    function togglePower() {
+      sendCommand('/toggle');
+    }
 
-            const data = new Uint8Array([r, g, b]);
-            try {
-                await bluetoothCharacteristic.writeValue(data);
-            } catch (error) {
-                console.error("Fehler beim Senden:", error);
-            }
-        }
+    function updateColor() {
+      let color = document.getElementById('colorPicker').value;
+      let r = parseInt(color.substr(1,2), 16);
+      let g = parseInt(color.substr(3,2), 16);
+      let b = parseInt(color.substr(5,2), 16);
+      sendCommand(`/color?r=${r}&g=${g}&b=${b}`);
+    }
 
-        colorPicker.addEventListener('input', (event) => {
-            const hex = event.target.value;
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
+    function updateBrightness() {
+      let val = document.getElementById('brightness').value;
+      sendCommand(`/brightness?value=${val}`);
+    }
+  </script>
 
-            sendColor(r, g, b);
-        });
-    </script>
 </body>
 </html>
