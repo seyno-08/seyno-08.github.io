@@ -3,200 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 RGB Lampe Steuerung</title>
+    <title>ESP32 Smart Lamp Control</title>
     <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: rgba(22, 27, 34, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-primary: #8a2be2;
+            --accent-gradient: linear-gradient(135deg, #8a2be2, #ff007f);
+            --text-main: #f0f6fc;
+            --text-muted: #8b949e;
+            --danger: #f85149;
+            --success: #3fb950;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(138, 43, 226, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.1) 0%, transparent 40%);
+            color: var(--text-main);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            padding: 20px;
         }
-        .card {
-            background-color: #1e1e1e;
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            text-align: center;
-            width: 320px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        h2 {
-            margin-top: 0;
-            color: #bb86fc;
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
-        button {
-            background-color: #bb86fc;
-            color: #121212;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background-color: #3700b3;
-            color: #ffffff;
-        }
+
         .hidden {
-            display: none;
+            display: none !important;
+            opacity: 0;
         }
-        .control-group {
-            margin-top: 20px;
-            text-align: left;
+
+        /* Typography */
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-align: center;
+            margin-bottom: 5px;
         }
-        label {
-            font-size: 14px;
-            color: #b0bec5;
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: center;
+            line-height: 1.4;
         }
-        input[type="range"], input[type="color"] {
-            width: 100%;
-            margin-top: 8px;
+
+        /* Buttons */
+        .btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 14px;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
         }
-        #status {
-            font-size: 13px;
-            color: #cf6679;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(138, 43, 226, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            box-shadow: none;
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, 0.25);
+            box-shadow: none;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            align-self: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* Control Cards / Elements */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
             margin-top: 10px;
+        }
+
+        .control-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Custom Range Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Custom Color Picker wrapper */
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        #statusText {
+            font-size: 0.85rem;
+            color: var(--danger);
+            text-align: center;
+            min-height: 20px;
+        }
+
+        /* Icon helper */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>Smart Lamp</h2>
-        
-        <!-- Startbildschirm: Nur der Verbindungs-Button -->
-        <div id="connectScreen">
-            <p>Verbinde dich mit deiner ESP32-Lampe, um sie zu steuern.</p>
-            <button id="connectBtn">Mit Lampe verbinden</button>
-            <div id="status"></div>
-        </div>
-
-        <!-- Bedienbildschirm: Erst nach erfolgreicher Verbindung sichtbar -->
-        <div id="controlScreen" class="hidden">
-            <p style="color: #03dac6; font-size: 14px;">Status: Verbunden</p>
-            
-            <button id="toggleBtn" style="background-color: #03dac6;">An / Aus umschalten</button>
-
-            <div class="control-group">
-                <label for="brightnessRange">Helligkeit:</label>
-                <input type="range" id="brightnessRange" min="0" max="255" value="128">
-            </div>
-
-            <div class="control-group">
-                <label for="colorPicker">Farbe wählen:</label>
-                <input type="color" id="colorPicker" value="#ffffff">
-            </div>
-
-            <button id="disconnectBtn" style="background-color: #cf6679; margin-top: 25px;">Trennen</button>
-        </div>
-    </div>
-
-    <script>
-        // Die exakten UUIDs aus deinem Arduino-Code
-        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-
-        let bluetoothDevice;
-        let bluetoothCharacteristic;
-
-        const connectScreen = document.getElementById('connectScreen');
-        const controlScreen = document.getElementById('controlScreen');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const brightnessRange = document.getElementById('brightnessRange');
-        const colorPicker = document.getElementById('colorPicker');
-        const statusDiv = document.getElementById('status');
-
-        // Verbindungs-Button Event
-        connectBtn.addEventListener('click', async () => {
-            try {
-                statusDiv.textContent = "Suche nach Lampe...";
-                
-                bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'ESP32_RGB_Lampe' }],
-                    optionalServices: [SERVICE_UUID]
-                });
-
-                statusDiv.textContent = "Verbinde mit Server...";
-                const server = await bluetoothDevice.gatt.connect();
-
-                statusDiv.textContent = "Lade Service...";
-                const service = await server.getPrimaryService(SERVICE_UUID);
-
-                statusDiv.textContent = "Lade Charakteristik...";
-                bluetoothCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-                // Wenn alles geklappt hat: Wechsle den Bildschirm
-                connectScreen.classList.add('hidden');
-                controlScreen.classList.remove('hidden');
-
-                // Eventlistener für Verbindungsabbruch von außen
-                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
-            } catch (error) {
-                console.error(error);
-                statusDiv.textContent = "Fehler: " + error.message;
-            }
-        });
-
-        // Funktion zum Senden von Daten an den ESP32
-        async function sendCommand(command) {
-            if (!bluetoothCharacteristic) return;
-            try {
-                const encoder = new TextEncoder();
-                await bluetoothCharacteristic.writeValue(encoder.encode(command));
-            } catch (error) {
-                console.error("Fehler beim Senden:", error);
-            }
-        }
-
-        // Steuerelemente-Events
-        toggleBtn.addEventListener('click', () => {
-            sendCommand("T");
-        });
-
-        brightnessRange.addEventListener('input', (e) => {
-            sendCommand("B" + e.target.value);
-        });
-
-        colorPicker.addEventListener('input', (e) => {
-            let hex = e.target.value.replace('#', '');
-            let r = parseInt(hex.substring(0, 2), 16);
-            let g = parseInt(hex.substring(2, 4), 16);
-            let b = parseInt(hex.substring(4, 6), 16);
-            sendCommand(`C${r},${g},${b}`);
-        });
-
-        // Trennen-Button
-        disconnectBtn.addEventListener('click', () => {
-            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                bluetoothDevice.gatt.disconnect();
-            }
-            resetUI();
-        });
-
-        function onDisconnected() {
-            console.log("Verbindung getrennt.");
-            resetUI();
-        }
-
-        function resetUI() {
-            controlScreen.classList.add('hidden');
-            connectScreen.classList.remove('hidden');
-            statusDiv.textContent = "Verbindung getrennt.";
-            bluetoothDevice = null;
-            bluetoothCharacteristic = null;
-        }
-    </script>
-</body>
-</html>
+    <div class="container">
+        <!-- START-BILDSCHIRM -->
+        <div id="connectScreen" class="screen">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8a2be2" />
+                            <stop offset="100%" stop-color="#ff007f" />
+                        </linearGradient
