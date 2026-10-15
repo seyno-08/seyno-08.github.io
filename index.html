@@ -1,133 +1,202 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 RGB Lampe Steuerung</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      background: #121212;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 50px 20px;
-    }
-    h1 {
-      color: #03dac6;
-      margin-bottom: 5px;
-    }
-    p {
-      color: #aaa;
-      margin-top: 0;
-    }
-    .card {
-      background: #1e1e1e;
-      padding: 30px;
-      border-radius: 15px;
-      display: inline-block;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-      max-width: 400px;
-      width: 100%;
-    }
-    .control-group {
-      margin: 20px 0;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    input[type=color] {
-      border: none;
-      width: 100px;
-      height: 50px;
-      border-radius: 8px;
-      cursor: pointer;
-      background: none;
-    }
-    input[type=range] {
-      width: 100%;
-      accent-color: #03dac6;
-    }
-    button.power-btn {
-      background: #cf6679;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.2s;
-    }
-    button.power-btn:hover {
-      background: #b5495b;
-    }
-    .status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #888;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 RGB Lampe Steuerung</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            text-align: center;
+            width: 320px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #bb86fc;
+        }
+        button {
+            background-color: #bb86fc;
+            color: #121212;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #3700b3;
+            color: #ffffff;
+        }
+        .hidden {
+            display: none;
+        }
+        .control-group {
+            margin-top: 20px;
+            text-align: left;
+        }
+        label {
+            font-size: 14px;
+            color: #b0bec5;
+        }
+        input[type="range"], input[type="color"] {
+            width: 100%;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        #status {
+            font-size: 13px;
+            color: #cf6679;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>Smart Lamp</h1>
-    <p>ESP32 Webinterface</p>
-    
-    <div class="control-group">
-      <button class="power-btn" onclick="togglePower()">Ein / Aus (Toggle)</button>
+    <div class="card">
+        <h2>Smart Lamp</h2>
+        
+        <!-- Startbildschirm: Nur der Verbindungs-Button -->
+        <div id="connectScreen">
+            <p>Verbinde dich mit deiner ESP32-Lampe, um sie zu steuern.</p>
+            <button id="connectBtn">Mit Lampe verbinden</button>
+            <div id="status"></div>
+        </div>
+
+        <!-- Bedienbildschirm: Erst nach erfolgreicher Verbindung sichtbar -->
+        <div id="controlScreen" class="hidden">
+            <p style="color: #03dac6; font-size: 14px;">Status: Verbunden</p>
+            
+            <button id="toggleBtn" style="background-color: #03dac6;">An / Aus umschalten</button>
+
+            <div class="control-group">
+                <label for="brightnessRange">Helligkeit:</label>
+                <input type="range" id="brightnessRange" min="0" max="255" value="128">
+            </div>
+
+            <div class="control-group">
+                <label for="colorPicker">Farbe wählen:</label>
+                <input type="color" id="colorPicker" value="#ffffff">
+            </div>
+
+            <button id="disconnectBtn" style="background-color: #cf6679; margin-top: 25px;">Trennen</button>
+        </div>
     </div>
 
-    <div class="control-group">
-      <label for="colorPicker">Farbe wählen:</label>
-      <input type="color" id="colorPicker" value="#ffffff" onchange="updateColor()">
-    </div>
+    <script>
+        // Die exakten UUIDs aus deinem Arduino-Code
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
-    <div class="control-group">
-      <label for="brightness">Helligkeit:</label>
-      <input type="range" id="brightness" min="0" max="255" value="128" oninput="updateBrightness()">
-    </div>
+        let bluetoothDevice;
+        let bluetoothCharacteristic;
 
-    <div class="status" id="statusText">Status: Verbunden</div>
-  </div>
+        const connectScreen = document.getElementById('connectScreen');
+        const controlScreen = document.getElementById('controlScreen');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const brightnessRange = document.getElementById('brightnessRange');
+        const colorPicker = document.getElementById('colorPicker');
+        const statusDiv = document.getElementById('status');
 
-  <script>
-    // Trage hier die IP-Adresse deines ESP32 ein (z.B. "http://192.168.4.1")
-    // Wenn die Seite direkt vom ESP32 geladen wird, kann es auch leer bleiben ("").
-    const espIp = ""; 
+        // Verbindungs-Button Event
+        connectBtn.addEventListener('click', async () => {
+            try {
+                statusDiv.textContent = "Suche nach Lampe...";
+                
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32_RGB_Lampe' }],
+                    optionalServices: [SERVICE_UUID]
+                });
 
-    function sendCommand(url) {
-      fetch(espIp + url)
-        .then(response => {
-          document.getElementById('statusText').innerText = "Status: Befehl gesendet";
-        })
-        .catch(error => {
-          document.getElementById('statusText').innerText = "Status: Fehler bei Verbindung!";
-          console.error('Fehler:', error);
+                statusDiv.textContent = "Verbinde mit Server...";
+                const server = await bluetoothDevice.gatt.connect();
+
+                statusDiv.textContent = "Lade Service...";
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                statusDiv.textContent = "Lade Charakteristik...";
+                bluetoothCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                // Wenn alles geklappt hat: Wechsle den Bildschirm
+                connectScreen.classList.add('hidden');
+                controlScreen.classList.remove('hidden');
+
+                // Eventlistener für Verbindungsabbruch von außen
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.textContent = "Fehler: " + error.message;
+            }
         });
-    }
 
-    function togglePower() {
-      sendCommand('/toggle');
-    }
+        // Funktion zum Senden von Daten an den ESP32
+        async function sendCommand(command) {
+            if (!bluetoothCharacteristic) return;
+            try {
+                const encoder = new TextEncoder();
+                await bluetoothCharacteristic.writeValue(encoder.encode(command));
+            } catch (error) {
+                console.error("Fehler beim Senden:", error);
+            }
+        }
 
-    function updateColor() {
-      let color = document.getElementById('colorPicker').value;
-      let r = parseInt(color.substr(1,2), 16);
-      let g = parseInt(color.substr(3,2), 16);
-      let b = parseInt(color.substr(5,2), 16);
-      sendCommand(`/color?r=${r}&g=${g}&b=${b}`);
-    }
+        // Steuerelemente-Events
+        toggleBtn.addEventListener('click', () => {
+            sendCommand("T");
+        });
 
-    function updateBrightness() {
-      let val = document.getElementById('brightness').value;
-      sendCommand(`/brightness?value=${val}`);
-    }
-  </script>
+        brightnessRange.addEventListener('input', (e) => {
+            sendCommand("B" + e.target.value);
+        });
 
+        colorPicker.addEventListener('input', (e) => {
+            let hex = e.target.value.replace('#', '');
+            let r = parseInt(hex.substring(0, 2), 16);
+            let g = parseInt(hex.substring(2, 4), 16);
+            let b = parseInt(hex.substring(4, 6), 16);
+            sendCommand(`C${r},${g},${b}`);
+        });
+
+        // Trennen-Button
+        disconnectBtn.addEventListener('click', () => {
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            }
+            resetUI();
+        });
+
+        function onDisconnected() {
+            console.log("Verbindung getrennt.");
+            resetUI();
+        }
+
+        function resetUI() {
+            controlScreen.classList.add('hidden');
+            connectScreen.classList.remove('hidden');
+            statusDiv.textContent = "Verbindung getrennt.";
+            bluetoothDevice = null;
+            bluetoothCharacteristic = null;
+        }
+    </script>
 </body>
 </html>
