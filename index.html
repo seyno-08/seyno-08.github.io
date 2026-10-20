@@ -2,152 +2,601 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seynabs Lampe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0e18">
+    <title>Schreibtischlampe</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
+            --page-bg: #0c1426;
+            --card-top: #171b29;
+            --card-bottom: #0b0e18;
+            --panel: #1a2036;
+            --panel-border: #2b3354;
+            --track: #2a2f4a;
+            --text: #ffffff;
+            --text-muted: #8f9bbd;
+            --accent-from: #7c5cff;
+            --accent-to: #b784ff;
+            --ok: #5ae88a;
+            --off: #5b6486;
+            --danger: #ff6b6b;
         }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body { min-height: 100%; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse 70% 55% at 50% 45%, #2a4a78 0%, rgba(42, 74, 120, 0) 70%),
+                linear-gradient(180deg, #111a30 0%, #0a1020 100%);
+            background-color: var(--page-bg);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
-        .container {
-            background-color: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            text-align: center;
+        .app {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: calc(1.6rem + env(safe-area-inset-top, 0px)) 1.4rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(180deg, var(--card-top) 0%, var(--card-bottom) 100%);
+            display: flex;
+            flex-direction: column;
         }
 
+        @media (min-width: 480px) {
+            .app {
+                min-height: 0;
+                border-radius: 36px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+                padding-top: 2rem;
+            }
+        }
+
+        /* ---------- Kopf ---------- */
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            letter-spacing: 0.5px;
+            margin: 0;
+            font-size: 2.7rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
         }
 
-        .screen {
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-top: 0.55rem;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--off);
+            flex: none;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .dot.on {
+            background: var(--ok);
+            box-shadow: 0 0 10px rgba(90, 232, 138, 0.6);
+        }
+
+        #status { flex: 1; min-width: 0; }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font: inherit;
+            font-size: 0.9rem;
+            padding: 0.3rem 0.1rem;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .link-btn:hover { color: var(--text); }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* ---------- Verbindung ---------- */
+        #connect-screen { margin-top: 2rem; }
+
+        #connect-screen p {
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0 0 1.5rem;
+        }
+
+        .primary-btn {
+            width: 100%;
+            border: none;
+            border-radius: 999px;
+            padding: 1.05rem 1.5rem;
+            font: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+            box-shadow: 0 8px 24px rgba(124, 92, 255, 0.35);
+            transition: transform 0.15s, filter 0.2s;
+        }
+
+        .primary-btn:hover { filter: brightness(1.08); }
+        .primary-btn:active { transform: scale(0.98); }
+
+        /* ---------- Tabs ---------- */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            padding: 5px;
+            margin-top: 1.3rem;
+            background: #151a2b;
+            border: 1px solid #20263d;
+            border-radius: 999px;
+        }
+
+        .tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font: inherit;
+            font-size: 1.1rem;
+            padding: 0.8rem 0.5rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.25s, color 0.25s;
+        }
+
+        .tab[aria-selected="true"] {
+            color: #fff;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+            box-shadow: 0 4px 16px rgba(124, 92, 255, 0.35);
+        }
+
+        /* ---------- Vorschau ---------- */
+        .orb-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.6rem 0 1.3rem;
+        }
+
+        .orb {
+            --c: rgb(155, 92, 255);
+            --b: 0.7;
+            position: relative;
+            width: min(62vw, 250px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle, #1a1430 0%, #120f22 100%);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.04),
+                0 0 calc(30px + 50px * var(--b)) color-mix(in srgb, var(--c) 45%, transparent);
+            display: grid;
+            place-items: center;
+            transition: box-shadow 0.3s;
+        }
+
+        .orb-core {
+            width: 72%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: var(--c);
+            border: 2px solid rgba(255, 255, 255, 0.28);
+            filter: brightness(calc(0.3 + 0.7 * var(--b)));
+            display: grid;
+            place-items: center;
+            transition: filter 0.2s;
+        }
+
+        .orb.is-off {
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+        }
+
+        .orb.is-off .orb-core {
+            background: #2a2f46;
+            filter: none;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .orb-value {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
             display: none;
         }
 
-        .screen.active {
-            display: block;
+        .orb.show-value .orb-value { display: block; }
+
+        .color-name {
+            margin-top: 0.9rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            min-height: 1.2em;
         }
 
-        button {
-            background-color: var(--accent);
-            color: white;
+        /* ---------- Palette ---------- */
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.7rem 0.5rem;
+            justify-items: center;
+            margin-bottom: 1.3rem;
+        }
+
+        .palette .gap-row { grid-column: 1 / -1; height: 0.2rem; }
+
+        .swatch {
+            width: 100%;
+            max-width: 52px;
+            aspect-ratio: 1;
+            border-radius: 50%;
             border: none;
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
-            border-radius: 10px;
+            padding: 0;
+            cursor: pointer;
+            background: var(--s);
+            position: relative;
+            transition: transform 0.15s;
+        }
+
+        .swatch:active { transform: scale(0.92); }
+
+        .swatch[aria-pressed="true"]::after {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+        }
+
+        .swatch:focus-visible, .tab:focus-visible, .chip:focus-visible,
+        .primary-btn:focus-visible, .link-btn:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 1.3rem;
+        }
+
+        .chip {
+            border: 1px solid var(--panel-border);
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.7rem 1.1rem;
+            border-radius: 999px;
             cursor: pointer;
             transition: background 0.2s;
+        }
+
+        .chip[aria-pressed="true"] {
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+            border-color: transparent;
+        }
+
+        [hidden] { display: none !important; }
+
+        /* ---------- Helligkeit ---------- */
+        .slider-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.7rem;
+            font-size: 1.1rem;
+        }
+
+        .slider-head label { color: var(--text-muted); }
+        .slider-head output { font-weight: 700; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            --pct: 70%;
             width: 100%;
-            font-weight: 600;
-        }
-
-        button:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .control-group {
-            margin-top: 1.5rem;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        input[type="range"], input[type="color"] {
-            width: 100%;
+            height: 28px;
+            margin: 0;
+            background: transparent;
             cursor: pointer;
-            margin-bottom: 1rem;
         }
 
-        input[type="color"] {
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to)) 0 / var(--pct) 100% no-repeat, var(--track);
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            border-radius: 999px;
+            background: var(--track);
+        }
+
+        input[type="range"]::-moz-range-progress {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            margin-top: -11px;
+            border-radius: 50%;
+            background: #fff;
             border: none;
-            height: 40px;
-            border-radius: 8px;
-            background: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
         }
 
-        #status {
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+        input[type="range"]::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
         }
+
+        input[type="range"]:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 999px; }
+
+        /* ---------- Ein / Aus ---------- */
+        .power {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            padding: 0.85rem 1.1rem 0.85rem 1.6rem;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 999px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .switch {
+            position: relative;
+            width: 62px;
+            height: 36px;
+            flex: none;
+        }
+
+        .switch input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .switch-track {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: var(--track);
+            transition: background 0.25s;
+            pointer-events: none;
+        }
+
+        .switch-track::after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            transition: transform 0.25s;
+        }
+
+        .switch input:checked + .switch-track {
+            background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+        }
+
+        .switch input:checked + .switch-track::after { transform: translateX(26px); }
+
+        .switch input:focus-visible + .switch-track { outline: 3px solid #fff; outline-offset: 3px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Seynabs Lampe</h1>
+    <main class="app">
+        <h1>Lampe</h1>
+        <div class="status-row">
+            <span class="dot" id="dot"></span>
+            <span id="status">Nicht verbunden</span>
+            <button class="link-btn" id="disconnect-btn" hidden>Trennen</button>
+        </div>
 
         <!-- Bildschirm 1: Verbindung -->
-        <div id="connect-screen" class="screen active">
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Verbinde dein Gerät mit der Lampe, um sie zu steuern.</p>
-            <button id="connect-btn">Mit Lampe verbinden</button>
-            <div id="status">Nicht verbunden</div>
-        </div>
+        <section id="connect-screen" class="screen active">
+            <p>Verbinde dein Gerät mit der Lampe, um sie zu steuern.</p>
+            <button class="primary-btn" id="connect-btn">Mit Lampe verbinden</button>
+        </section>
 
         <!-- Bildschirm 2: Bedienung -->
-        <div id="control-screen" class="screen">
-            <div class="control-group">
-                <label for="colorPicker">Farbe wählen (RGB)</label>
-                <input type="color" id="colorPicker" value="#ffffff">
+        <section id="control-screen" class="screen">
+            <div class="tabs" role="tablist">
+                <button class="tab" role="tab" id="tab-color" aria-selected="true" data-tab="color">Farbe</button>
+                <button class="tab" role="tab" id="tab-dim" aria-selected="false" data-tab="dim">Dimmen</button>
             </div>
 
-            <div class="control-group">
-                <label for="brightnessSlider">Helligkeit dimmen</label>
-                <input type="range" id="brightnessSlider" min="0" max="255" value="100">
+            <div class="orb-wrap">
+                <div class="orb" id="orb">
+                    <div class="orb-core"><span class="orb-value" id="orb-value">70 %</span></div>
+                </div>
+                <div class="color-name" id="color-name">Violett</div>
             </div>
 
-            <button id="disconnect-btn" style="background-color: #ef4444; margin-top: 1rem;">Verbindung trennen</button>
-        </div>
-    </div>
+            <!-- Tab Farbe: Farbpalette -->
+            <div class="palette" id="palette" role="group" aria-label="Farbpalette"></div>
+
+            <!-- Tab Dimmen: Schnellwahl -->
+            <div class="presets" id="presets" role="group" aria-label="Helligkeit Schnellwahl" hidden></div>
+
+            <div class="slider-head">
+                <label for="brightnessSlider">Helligkeit</label>
+                <output id="brightnessValue" for="brightnessSlider">70&nbsp;%</output>
+            </div>
+            <input type="range" id="brightnessSlider" min="0" max="100" value="70">
+
+            <label class="power">
+                <span>Ein / Aus</span>
+                <span class="switch">
+                    <input type="checkbox" id="powerToggle" checked>
+                    <span class="switch-track"></span>
+                </span>
+            </label>
+        </section>
+    </main>
 
     <script>
         const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
         const CHARACTERISTIC_UUID = "87654321-4321-4321-4321-ba0987654321";
 
+        // ---------- Farbpalette ----------
+        // Nur Farben, die ein RGB-Streifen leuchten kann (kein Schwarz).
+        const SOLIDS = [
+            { name: 'Warmweiß',  rgb: [255, 196, 130] },
+            { name: 'Rot',       rgb: [255, 59, 59] },
+            { name: 'Orange',    rgb: [255, 159, 46] },
+            { name: 'Gelb',      rgb: [255, 230, 41] },
+            { name: 'Grün',      rgb: [46, 255, 122] },
+            { name: 'Türkis',    rgb: [25, 230, 200] },
+            { name: 'Cyan',      rgb: [41, 211, 255] },
+            { name: 'Blau',      rgb: [61, 123, 255] },
+            { name: 'Violett',   rgb: [155, 92, 255] },
+            { name: 'Pink',      rgb: [255, 92, 184] },
+            { name: 'Magenta',   rgb: [255, 43, 224] },
+            { name: 'Kaltweiß',  rgb: [225, 235, 255] }
+        ];
+
+        // Farbverläufe laufen langsam durch ihre Farben, Disco wechselt hart.
+        const EFFECTS = [
+            { name: 'Regenbogen',     mode: 'fade', period: 9000,
+              stops: [[255, 40, 40], [255, 230, 40], [40, 255, 100], [40, 220, 255], [70, 90, 255], [255, 50, 220]] },
+            { name: 'Sonnenuntergang', mode: 'fade', period: 7000,
+              stops: [[255, 110, 40], [255, 45, 110], [150, 50, 210]] },
+            { name: 'Ozean',          mode: 'fade', period: 7000,
+              stops: [[0, 120, 255], [0, 225, 215], [60, 70, 220]] },
+            { name: 'Aurora',         mode: 'fade', period: 8000,
+              stops: [[50, 255, 140], [0, 200, 255], [160, 90, 255]] },
+            { name: 'Feuer',          mode: 'fade', period: 3000,
+              stops: [[255, 40, 0], [255, 120, 0], [255, 200, 40]] },
+            { name: 'Disco',          mode: 'disco', period: 450,
+              stops: [[255, 40, 40], [255, 230, 40], [40, 255, 100], [40, 220, 255], [70, 90, 255], [255, 50, 220]] }
+        ];
+
+        const css = (rgb) => `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        const swatchBackground = (e) => e.mode === 'disco'
+            ? `conic-gradient(${e.stops.map(css).join(', ')}, ${css(e.stops[0])})`
+            : `linear-gradient(135deg, ${e.stops.map(css).join(', ')})`;
+
+        // ---------- Zustand ----------
+        const state = {
+            on: true,
+            brightness: 70,
+            tab: 'color',
+            rgb: [155, 92, 255],
+            name: 'Violett',
+            selected: 'Violett',
+            effect: null
+        };
+
         let bluetoothDevice;
         let bluetoothCharacteristic;
-        let rssiInterval;
+        let effectTimer = null;
+        let effectStart = 0;
+        let discoIndex = -1;
 
-        const connectScreen = document.getElementById('connect-screen');
-        const controlScreen = document.getElementById('control-screen');
-        const connectBtn = document.getElementById('connect-btn');
-        const disconnectBtn = document.getElementById('disconnect-btn');
-        const statusDiv = document.getElementById('status');
-        const colorPicker = document.getElementById('colorPicker');
-        const brightnessSlider = document.getElementById('brightnessSlider');
+        // ---------- Elemente ----------
+        const $ = (id) => document.getElementById(id);
+        const connectScreen = $('connect-screen');
+        const controlScreen = $('control-screen');
+        const connectBtn = $('connect-btn');
+        const disconnectBtn = $('disconnect-btn');
+        const statusEl = $('status');
+        const dot = $('dot');
+        const orb = $('orb');
+        const orbValue = $('orb-value');
+        const colorName = $('color-name');
+        const paletteEl = $('palette');
+        const presetsEl = $('presets');
+        const slider = $('brightnessSlider');
+        const sliderValue = $('brightnessValue');
+        const powerToggle = $('powerToggle');
+
+        // ---------- Palette und Schnellwahl aufbauen ----------
+        function makeSwatch(item, background) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'swatch';
+            b.style.setProperty('--s', background);
+            b.setAttribute('aria-label', item.name);
+            b.setAttribute('aria-pressed', 'false');
+            b.dataset.name = item.name;
+            b.addEventListener('click', () => selectItem(item));
+            return b;
+        }
+
+        SOLIDS.forEach(c => paletteEl.appendChild(makeSwatch(c, css(c.rgb))));
+        const spacer = document.createElement('div');
+        spacer.className = 'gap-row';
+        paletteEl.appendChild(spacer);
+        EFFECTS.forEach(e => paletteEl.appendChild(makeSwatch(e, swatchBackground(e))));
+
+        [10, 25, 50, 75, 100].forEach(p => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'chip';
+            b.textContent = `${p}\u00a0%`;
+            b.setAttribute('aria-pressed', 'false');
+            b.dataset.value = p;
+            b.addEventListener('click', () => setBrightness(p));
+            presetsEl.appendChild(b);
+        });
+
+        // ---------- Verbindung ----------
+        function setStatus(text, connected) {
+            statusEl.textContent = text;
+            dot.classList.toggle('on', !!connected);
+        }
 
         connectBtn.addEventListener('click', connectBLE);
         disconnectBtn.addEventListener('click', disconnectBLE);
 
         async function connectBLE() {
             try {
-                statusDiv.innerText = "Suche nach Lampe...";
+                setStatus('Suche nach Lampe...', false);
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ name: 'Seynabs Lampe' }],
                     optionalServices: [SERVICE_UUID]
@@ -155,66 +604,28 @@
 
                 bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
-                statusDiv.innerText = "Verbinde mit GATT...";
+                setStatus('Verbinde mit GATT...', false);
                 const server = await bluetoothDevice.gatt.connect();
 
-                statusDiv.innerText = "Lade Service...";
+                setStatus('Lade Service...', false);
                 const service = await server.getPrimaryService(SERVICE_UUID);
 
-                statusDiv.innerText = "Lade Charakteristik...";
+                setStatus('Lade Charakteristik...', false);
                 bluetoothCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-                // Wechsel zum Bedienungs-Bildschirm
+                setStatus('Bluetooth verbunden', true);
+                disconnectBtn.hidden = false;
                 connectScreen.classList.remove('active');
                 controlScreen.classList.add('active');
 
-                // RSSI Überwachung starten (Signalstärke prüfen)
-                startRssiMonitoring();
-
+                // Lampe auf den aktuellen Stand der Oberfläche bringen
+                if (state.effect) startEffect(state.effect);
+                sendColor();
+                sendBrightness();
             } catch (error) {
-                console.error("Fehler bei der Verbindung:", error);
-                statusDiv.innerText = "Verbindung fehlgeschlagen.";
+                console.error('Fehler bei der Verbindung:', error);
+                setStatus('Verbindung fehlgeschlagen.', false);
             }
-        }
-
-        // Farbe senden
-        colorPicker.addEventListener('input', (e) => {
-            const hex = e.target.value;
-            const r = parseInt(hex.substring(1, 3), 16);
-            const g = parseInt(hex.substring(3, 5), 16);
-            const b = parseInt(hex.substring(5, 7), 16);
-            sendData(`R:${r},G:${g},B:${b}`);
-        });
-
-        // Helligkeit senden
-        brightnessSlider.addEventListener('input', (e) => {
-            const val = e.target.value;
-            sendData(`BR:${val}`);
-        });
-
-        async function sendData(data) {
-            if (bluetoothCharacteristic && bluetoothDevice && bluetoothDevice.gatt.connected) {
-                const encoder = new TextEncoder();
-                try {
-                    await bluetoothCharacteristic.writeValue(encoder.encode(data));
-                } catch (error) {
-                    console.error("Fehler beim Senden:", error);
-                }
-            }
-        }
-
-        function startRssiMonitoring() {
-            // Regelmäßige RSSI Abfrage (Browser unterstützen watchAdvertisements oder remoteRSSI je nach API)
-            rssiInterval = setInterval(async () => {
-                if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                    try {
-                        // Hinweis: Web Bluetooth Standard hat aktuell limitierte direkte RSSI-Abfragen im verbundenen Zustand, 
-                        // weshalb man oft auf Signal-Events setzt. Alternativ bricht der ESP32 die Verbindung ab.
-                    } catch (err) {
-                        console.error("RSSI Fehler", err);
-                    }
-                }
-            }, 3000);
         }
 
         function disconnectBLE() {
@@ -224,11 +635,176 @@
         }
 
         function onDisconnected() {
-            clearInterval(rssiInterval);
+            stopEffectTimer();
+            pending.clear();
+            bluetoothCharacteristic = null;
+            disconnectBtn.hidden = true;
             controlScreen.classList.remove('active');
             connectScreen.classList.add('active');
-            statusDiv.innerText = "Verbindung getrennt (oder RSSI zu schwach).";
+            setStatus('Verbindung getrennt (oder Signal zu schwach).', false);
         }
+
+        // ---------- Senden (neueste Werte gewinnen, keine überlappenden Schreibzugriffe) ----------
+        const pending = new Map();
+        let busy = false;
+        const encoder = new TextEncoder();
+
+        const isConnected = () =>
+            bluetoothCharacteristic && bluetoothDevice && bluetoothDevice.gatt.connected;
+
+        function send(key, data) {
+            if (!isConnected()) return;
+            pending.set(key, data);
+            pump();
+        }
+
+        async function pump() {
+            if (busy) return;
+            busy = true;
+            try {
+                while (pending.size && isConnected()) {
+                    const [key, data] = pending.entries().next().value;
+                    pending.delete(key);
+                    try {
+                        await bluetoothCharacteristic.writeValue(encoder.encode(data));
+                    } catch (error) {
+                        console.error('Fehler beim Senden:', error);
+                    }
+                }
+            } finally {
+                busy = false;
+            }
+        }
+
+        function sendColor() {
+            const [r, g, b] = state.rgb.map(v => Math.round(v));
+            send('color', `R:${r},G:${g},B:${b}`);
+        }
+
+        function sendBrightness() {
+            const val = state.on ? Math.round(state.brightness * 2.55) : 0;
+            send('br', `BR:${val}`);
+        }
+
+        // ---------- Farbauswahl und Effekte ----------
+        function selectItem(item) {
+            stopEffectTimer();
+            state.selected = item.name;
+            state.name = item.name;
+
+            if (item.rgb) {
+                state.effect = null;
+                state.rgb = item.rgb.slice();
+                sendColor();
+            } else {
+                state.effect = item;
+                startEffect(item);
+            }
+
+            if (!state.on) { state.on = true; powerToggle.checked = true; sendBrightness(); }
+            render();
+        }
+
+        const smooth = (f) => f * f * (3 - 2 * f);
+
+        function fadeColor(effect, t) {
+            const n = effect.stops.length;
+            const pos = ((t % effect.period) / effect.period) * n;
+            const i = Math.floor(pos);
+            const f = smooth(pos - i);
+            const a = effect.stops[i % n];
+            const b = effect.stops[(i + 1) % n];
+            return a.map((v, k) => v + (b[k] - v) * f);
+        }
+
+        function startEffect(effect) {
+            stopEffectTimer();
+            effectStart = performance.now();
+            discoIndex = -1;
+            const interval = effect.mode === 'disco' ? 60 : 100;
+            effectTimer = setInterval(() => {
+                const t = performance.now() - effectStart;
+                if (effect.mode === 'disco') {
+                    const idx = Math.floor(t / effect.period);
+                    if (idx === discoIndex) return;
+                    discoIndex = idx;
+                    // zufällige, volle Farbe, nie zweimal dieselbe hintereinander
+                    let next;
+                    do { next = effect.stops[Math.floor(Math.random() * effect.stops.length)]; }
+                    while (next === state.rgb && effect.stops.length > 1);
+                    state.rgb = next.slice();
+                } else {
+                    state.rgb = fadeColor(effect, t);
+                }
+                paintOrb();
+                if (state.on) sendColor();
+            }, interval);
+        }
+
+        function stopEffectTimer() {
+            if (effectTimer) { clearInterval(effectTimer); effectTimer = null; }
+        }
+
+        // ---------- Helligkeit, Ein/Aus, Tabs ----------
+        function setBrightness(p) {
+            state.brightness = Math.max(0, Math.min(100, Number(p)));
+            if (!state.on && state.brightness > 0) { state.on = true; powerToggle.checked = true; }
+            sendBrightness();
+            render();
+        }
+
+        slider.addEventListener('input', (e) => setBrightness(e.target.value));
+
+        powerToggle.addEventListener('change', (e) => {
+            state.on = e.target.checked;
+            sendBrightness();
+            if (state.on) sendColor();
+            render();
+        });
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                state.tab = tab.dataset.tab;
+                render();
+            });
+        });
+
+        // ---------- Darstellung ----------
+        function paintOrb() {
+            orb.style.setProperty('--c', css(state.rgb));
+            orb.style.setProperty('--b', (state.brightness / 100).toFixed(2));
+            orb.classList.toggle('is-off', !state.on);
+        }
+
+        function render() {
+            paintOrb();
+
+            const percent = `${state.brightness}\u00a0%`;
+            slider.value = state.brightness;
+            slider.style.setProperty('--pct', `${state.brightness}%`);
+            sliderValue.textContent = percent;
+            orbValue.textContent = percent;
+
+            const dimTab = state.tab === 'dim';
+            orb.classList.toggle('show-value', dimTab);
+            colorName.textContent = state.on ? state.name : 'Aus';
+
+            document.querySelectorAll('.tab').forEach(t => {
+                t.setAttribute('aria-selected', String(t.dataset.tab === state.tab));
+            });
+
+            paletteEl.hidden = dimTab;
+            presetsEl.hidden = !dimTab;
+
+            paletteEl.querySelectorAll('.swatch').forEach(s => {
+                s.setAttribute('aria-pressed', String(s.dataset.name === state.selected));
+            });
+            presetsEl.querySelectorAll('.chip').forEach(c => {
+                c.setAttribute('aria-pressed', String(Number(c.dataset.value) === state.brightness));
+            });
+        }
+
+        render();
     </script>
 </body>
 </html>
